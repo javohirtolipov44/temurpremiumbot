@@ -24,7 +24,7 @@ async def startup_answer(bot: Bot):
     asyncio.create_task(premium_unban_watcher(bot))
     asyncio.create_task(three_day(bot))
     asyncio.create_task(scheduler(bot))
-    asyncio.create_task(sleep_stop_bot(bot))
+    #asyncio.create_task(sleep_stop_bot(bot))
     asyncio.create_task(monthly_admin_notify(bot))
 
 async def shutdown_answer(bot: Bot):
@@ -36,7 +36,6 @@ async def start():
     dp.startup.register(startup_answer)
     dp.shutdown.register(shutdown_answer)
 
-    logging.basicConfig(level=logging.INFO)
 
 
     bot = Bot(TOKEN)

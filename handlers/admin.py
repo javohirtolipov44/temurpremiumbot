@@ -163,6 +163,14 @@ async def handle_media_callback(call: CallbackQuery, callback_data: MediaCallbac
                                  f"⏳ Tugash: {end_at}</b>",
                                  parse_mode="HTML")
 
+        await call.bot.send_message(ADMINS[0], f"📄 <b>Obuna ma'lumotlari\n\n"
+                                 f"🆔 ID: <code>{chat_id}</code>\n"
+                                 f"🚹 FulName: <code>{full_name}</code>\n"
+                                 f"🔄 UserName: <code>{username}</code>\n"
+                                 f"⏱ Boshlanish: {start_at}\n"
+                                 f"⏳ Tugash: {end_at}</b>",
+                                 parse_mode="HTML")
+
         await call.bot.send_message(chat_id, f"📄 <b>Obuna ma'lumotlari\n\n"
                                             f"⏱ Boshlanish: {start_at}\n"
                                             f"⏳ Tugash: {end_at}\n\n"
@@ -199,6 +207,15 @@ async def handle_media_callback(call: CallbackQuery, callback_data: MediaCallbac
                                      f"⏳ Tugash: {end_at}</b>",
                                      parse_mode="HTML")
 
+            await call.bot.send_message(ADMINS[0], f"📄 <b>Obuna ma'lumotlari o'zgardi\n\n"
+                                 f"🆔 ID: <code>{chat_id}</code>\n"
+                                 f"🚹 FulName: <code>{full_name}</code>\n"
+                                 f"🔄 UserName: <code>{username}</code>\n"
+                                 f"⏱ Boshlanish: {start_at}\n"
+                                 f"⏳ Tugash: {end_at}</b>",
+                                 parse_mode="HTML")
+
+
             await call.bot.send_message(chat_id, f"📄 <b>Obuna ma'lumotlari o'zgardi\n\n"
                                                  f"⏱ Boshlanish: {start_at}\n"
                                                  f"⏳ Tugash: {end_at}\n\n"
@@ -209,8 +226,12 @@ async def handle_media_callback(call: CallbackQuery, callback_data: MediaCallbac
                                         parse_mode="HTML",
                                         reply_markup=obuna_kb)
         elif "USER_CHANNELS_TOO_MUCH" in e.message:
-            pass
-        # kod yoz noinsof
+            await call.message.reply("<b>Foydalanuvchi kanallari ko'pligi sababli qo'shilmadi</b>",
+                                     parse_mode="HTML")
+            await call.bot.send_message(chat_id,"<b>Sizda kanallar soni ko'pligi sababli premiumga qo'shila olmaysiz\nBirorta kanalni o'chirib qayta chek yuborin\n\n"
+                                        f"{PREMIUM_URL}</b>",
+                                        disable_web_page_preview=True,
+                                        parse_mode="HTML")
         else:
             await call.message.reply(f"{e}")
 
@@ -245,6 +266,28 @@ async def sendme_handler(call: CallbackQuery, state: FSMContext):
     await state.set_state(SendUserMessageState.send_user_message)
     await state.update_data(chat_id=chat_id)
 
+@router.message(F.text.startswith("/allpremiumusersremovetochanel"))
+async def all_premium_users_remove_to_chanel_handler(message: Message):
+    if message.from_user.id not in ADMINS:
+        await message.answer("Siz admin emassiz")
+        return
+    
+    async with async_session() as session:
+        prem_users = await all_premium_users(session)
+    try:
+        for prem_user in prem_users:
+            chat_id = prem_user.chat_id
+    
+            await message.bot.unban_chat_member(PREMIUM_ID, chat_id)
+                            
+            for ADMIN in ADMINS:
+                await message.bot.send_message(ADMIN, f"ID : {chat_id}\n"
+                                                               f"Kanaldan chiqarildi")
+    except Exception as e:
+            for ADMIN in ADMINS:
+                await message.bot.send_message(ADMIN,f"{e}\n\n"
+                                                         f"ID : {chat_id}") 
+
 
 @router.message(F.text.startswith("/allpremiumusersremovetochanel"))
 async def all_premium_users_remove_to_chanel_handler(message: Message):
@@ -267,7 +310,7 @@ async def all_premium_users_remove_to_chanel_handler(message: Message):
         except Exception as e:
             for ADMIN in ADMINS:
                 await message.bot.send_message(ADMIN,f"{e}\n\n"
-                                                         f"ID : {chat_id}")   
+                                                         f"ID : {chat_id}\n\n{PREMIUM_ID}")   
 
 
 @router.message(F.text.startswith("/sleep"))
@@ -488,7 +531,22 @@ async def ban(message: Message):
 
 
 
-
+@router.message(F.text.startswith("/delete"))
+async def delete_prem_users(message: Message, bot: Bot):
+    if not message.from_user.id in ADMINS:
+        await message.answer("Siz admin emassiz")
+        return
+    chat_id = int(message.text.split(" ")[1])
+    try:
+        async with async_session() as session:
+            await delete_premium_user(session, chat_id)
+        for ADMIN in ADMINS:
+            await bot.send_message(ADMIN, "Bazadan o'chirildi\n"
+                                              f"ID : {chat_id}")
+    except Exception as e:
+        for ADMIN in ADMINS:
+            await message.bot.send_message(ADMIN, f"{e}\n\n"
+                                          f"admin.py")
 
 
 
@@ -501,21 +559,38 @@ async def ban(message: Message):
 async def id_info(message: Message):
     if message.from_user.id in ADMINS:
         if message.text.isdigit():
-            chat_id = int(message.text)
-            async with async_session() as session:
-                prem_user = await get_one_premium_user(session, chat_id)
-            if not prem_user:
-                await message.answer("User premiumda mavjud emas")
-            else:
-                start_at_dt = datetime.fromtimestamp(prem_user.start_at, tz)
-                end_at_dt = datetime.fromtimestamp(prem_user.end_at, tz)
-                start_at = start_at_dt.strftime("%d.%m.%Y %H:%M")
-                end_at = end_at_dt.strftime("%d.%m.%Y %H:%M")
-                await message.answer_photo(
-                    photo=prem_user.file_id,
-                    caption="📄 <b>Obuna ma'lumotlari\n\n"
-                                 f"🆔 ID: <code>{chat_id}</code>\n"
-                                 f"⏱ Boshlanish: {start_at}\n"
-                                 f"⏳ Tugash: {end_at}</b>",
-                                 parse_mode="HTML",
-                                reply_markup=prem_user_caption(chat_id))
+            try:
+                chat_id = int(message.text)
+                async with async_session() as session:
+                    prem_user = await get_one_premium_user(session, chat_id)
+                if not prem_user:
+                    await message.answer("User premiumda mavjud emas")
+                else:
+                    start_at_dt = datetime.fromtimestamp(prem_user.start_at, tz)
+                    end_at_dt = datetime.fromtimestamp(prem_user.end_at, tz)
+                    start_at = start_at_dt.strftime("%d.%m.%Y %H:%M")
+                    end_at = end_at_dt.strftime("%d.%m.%Y %H:%M")
+                    try:
+                        await message.answer_photo(
+                            photo=prem_user.file_id,
+                            caption="📄 <b>Obuna ma'lumotlari\n\n"
+                                         f"🆔 ID: <code>{chat_id}</code>\n"
+                                         f"⏱ Boshlanish: {start_at}\n"
+                                         f"⏳ Tugash: {end_at}</b>",
+                                         parse_mode="HTML",
+                                         reply_markup=prem_user_caption(chat_id))
+                    except TelegramBadRequest as e:
+                        # Agar Photo bo‘lsa, Document qilib bo‘lmaydi
+                        if "can't use file of type Document as Photo" in str(e):
+                            await message.answer_document(
+                            document=prem_user.file_id,
+                            caption="📄 <b>Obuna ma'lumotlari\n\n"
+                                         f"🆔 ID: <code>{chat_id}</code>\n"
+                                         f"⏱ Boshlanish: {start_at}\n"
+                                         f"⏳ Tugash: {end_at}</b>",
+                                         parse_mode="HTML",
+                                         reply_markup=prem_user_caption(chat_id))
+            except Exception as e:
+                for ADMIN in ADMINS:
+                    await message.bot.send_message(ADMIN, f"{e}\n\n"
+                                          f"admin.py")

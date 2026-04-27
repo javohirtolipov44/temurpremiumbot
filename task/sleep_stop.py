@@ -19,19 +19,19 @@ async def sleep_stop_bot(bot: Bot):
             async with async_session() as session:
                 bot_sleep = await get_bot_sleep(session)
 
-                if not bot_sleep:
-                    await asyncio.sleep(60)
-                    continue
+            if not bot_sleep:
+                await asyncio.sleep(60)
+                continue
 
-                sleep_time = bot_sleep.sleep_time
+            sleep_time = bot_sleep.sleep_time
 
-                if now_ts >= sleep_time:
-                    await delete_bot_sleep(session)
-                    for ADMIN in ADMINS:
-                        await bot.send_message(
-                    ADMIN,
-                    f"Bot sleep vaqti tugadi"
-                )
+            if now_ts >= sleep_time:
+                await delete_bot_sleep(session)
+                for ADMIN in ADMINS:
+                    await bot.send_message(
+                        ADMIN,
+                        f"Bot sleep vaqti tugadi"
+                    )
 
         except Exception as e:
             for ADMIN in ADMINS:

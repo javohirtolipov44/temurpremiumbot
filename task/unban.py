@@ -23,24 +23,24 @@ async def premium_unban_watcher(bot: Bot):
             async with async_session() as session:
                 expired_users = await get_expired_users(session)
 
-                for prem_user in expired_users:
-                    chat_id = prem_user.chat_id
+            for prem_user in expired_users:
+                chat_id = prem_user.chat_id
 
-                    try:
-                        await bot.unban_chat_member(PREMIUM_ID, chat_id)
-                        await bot.send_message(chat_id, "Obuna muddatingiz tugadi.\n\n"
+                try:
+                    await bot.unban_chat_member(PREMIUM_ID, chat_id)
+                    await bot.send_message(chat_id, "Obuna muddatingiz tugadi.\n\n"
                                                         f"{PREMIUM_URL}")
-                        for ADMIN in ADMINS:
-                            await bot.send_message(ADMIN, "Obuna muddati tugadi\n"
+                    for ADMIN in ADMINS:
+                        await bot.send_message(ADMIN, "Obuna muddati tugadi\n"
                                                           f"ID : {chat_id}")
-                    except Exception as e:
-                        for ADMIN in ADMINS:
-                            await bot.send_message(ADMIN,f"{e}\n\n"
+                except Exception as e:
+                    for ADMIN in ADMINS:
+                        await bot.send_message(ADMIN,f"{e}\n\n"
                                                          f"ID : {chat_id}\n"
                                                          f"unban.py")
-                    in_chat = await is_user_in_chat(bot, PREMIUM_ID, chat_id)
-                    if not in_chat:
-                        await delete_premium_user(session, chat_id)
+                in_chat = await is_user_in_chat(bot, PREMIUM_ID, chat_id)
+                if not in_chat:
+                    await delete_premium_user(session, chat_id)      
 
         except Exception as e:
             for ADMIN in ADMINS:

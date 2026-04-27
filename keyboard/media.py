@@ -6,7 +6,7 @@ from keyboard.callback_data.media import MediaCallback
 def media_keyboard(chat_id: int):
     media_kb = InlineKeyboardBuilder()
 
-    for month in (1, 3, 6, 12):
+    for month in (1, 2, 3, 6, 12):
         media_kb.button(
             text=f"{month}-oy",
             callback_data=MediaCallback(
